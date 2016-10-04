@@ -5,9 +5,9 @@
   <vendor email="information@tomtec.de" url="http://www.tomtec.de/">TomTec</vendor>
 
   <description><![CDATA[
-      Plugin to be able to execute a gradle task from a context menu action on
-      a module. <br>
-      You can also use Ctrl + Alt + G to trigger the Execute dialog in an editor.
+    Plugin to be able to execute a gradle task from a context menu action on a module. <br>
+    You can also use Ctrl + Alt + G to trigger the Execute dialog in an editor. If used in the editor <br>
+    the current module path will be used as the base for running a task.
     ]]></description>
 
   <change-notes>
