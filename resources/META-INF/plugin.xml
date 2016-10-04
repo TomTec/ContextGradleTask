@@ -1,0 +1,33 @@
+<idea-plugin version="2">
+  <id>de.tomtec.idea.plugin.gradle.run</id>
+  <name>Execute Gradle Task</name>
+  <version>1.0</version>
+  <vendor email="information@tomtec.de" url="http://www.tomtec.de/">TomTec</vendor>
+
+  <description><![CDATA[
+      Plugin to be able to execute a gradle task from a context menu action on
+      a module. <br>
+      You can also use Ctrl + Alt + G to trigger the Execute dialog in an editor.
+    ]]></description>
+
+  <change-notes>
+  </change-notes>
+
+  <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
+  <idea-version since-build="145.0"/>
+
+  <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
+       on how to target different products -->
+  <depends>com.intellij.modules.lang</depends>
+  <depends>org.jetbrains.plugins.gradle</depends>
+
+  <actions>
+
+    <action id="RunGradleTask.run" class="de.tomtec.idea.plugin.gradle.run.action.RunGradleTask" text="Run Gradle Task..."
+            description="Run a gradle task for a selected project" icon="/icons/gradle.png">
+      <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
+      <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt G"/>
+    </action>
+  </actions>
+
+</idea-plugin>
