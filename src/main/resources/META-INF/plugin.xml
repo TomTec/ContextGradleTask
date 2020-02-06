@@ -1,4 +1,4 @@
-<idea-plugin version="2">
+<idea-plugin>
   <id>de.tomtec.idea.plugin.gradle.run</id>
   <name>Execute Gradle Task</name>
   <version>1.0</version>
@@ -11,23 +11,29 @@
     ]]></description>
 
   <change-notes>
+    Updated the plugin to work with the new IDEA plugin structure / build process.
+    Updated the plugin code to remove usage of deprecated APIs.
   </change-notes>
 
   <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/build_number_ranges.html for description -->
-  <idea-version since-build="145.0"/>
+  <idea-version since-build="173.0"/>
 
   <!-- please see http://www.jetbrains.org/intellij/sdk/docs/basics/getting_started/plugin_compatibility.html
        on how to target different products -->
   <depends>com.intellij.modules.lang</depends>
-  <depends>org.jetbrains.plugins.gradle</depends>
+  <depends>com.intellij.gradle</depends>
 
   <actions>
 
-    <action id="RunGradleTask.run" class="de.tomtec.idea.plugin.gradle.run.action.RunGradleTask" text="Run Gradle Task..."
+    <action id="RunGradleTask.run" class="de.tomtec.idea.plugin.gradle.run.action.RunGradleAction" text="Run Gradle Task..."
             description="Run a gradle task for a selected project" icon="/icons/gradle.png">
       <add-to-group group-id="ProjectViewPopupMenu" anchor="last"/>
       <keyboard-shortcut keymap="$default" first-keystroke="ctrl alt G"/>
     </action>
   </actions>
+
+  <extensions defaultExtensionNs="com.intellij">
+    <projectService serviceImplementation="de.tomtec.idea.plugin.gradle.run.service.RunGradleTaskHistoryService"/>
+  </extensions>
 
 </idea-plugin>

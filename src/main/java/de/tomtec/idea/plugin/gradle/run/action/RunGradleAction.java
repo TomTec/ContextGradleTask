@@ -19,15 +19,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.intellij.execution.Executor;
 import com.intellij.execution.RunManagerEx;
 import com.intellij.execution.RunnerAndConfigurationSettings;
 import com.intellij.execution.executors.DefaultRunExecutor;
-import com.intellij.openapi.actionSystem.AnActionEvent;
-import com.intellij.openapi.actionSystem.CommonDataKeys;
-import com.intellij.openapi.actionSystem.DataKeys;
-import com.intellij.openapi.actionSystem.Presentation;
+import com.intellij.openapi.actionSystem.*;
 import com.intellij.openapi.externalSystem.action.ExternalSystemAction;
-import com.intellij.openapi.externalSystem.action.ExternalSystemActionUtil;
 import com.intellij.openapi.externalSystem.model.execution.ExternalSystemTaskExecutionSettings;
 import com.intellij.openapi.externalSystem.model.execution.ExternalTaskExecutionInfo;
 import com.intellij.openapi.externalSystem.service.notification.ExternalSystemNotificationManager;
@@ -40,33 +37,33 @@ import com.intellij.openapi.module.Module;
 import com.intellij.openapi.project.Project;
 import com.intellij.openapi.util.text.StringUtil;
 import com.intellij.util.execution.ParametersListUtil;
+import de.tomtec.idea.plugin.gradle.run.service.RunGradleTaskHistoryService;
 import org.gradle.cli.CommandLineArgumentException;
 import org.gradle.cli.CommandLineParser;
 import org.gradle.cli.ParsedCommandLine;
 import org.jetbrains.annotations.NotNull;
+import org.jetbrains.annotations.Nullable;
 import org.jetbrains.plugins.gradle.service.execution.cmd.GradleCommandLineOptionsConverter;
-import org.jetbrains.plugins.gradle.service.task.ExecuteGradleTaskHistoryService;
-import org.jetbrains.plugins.gradle.service.task.GradleRunTaskDialog;
 import org.jetbrains.plugins.gradle.util.GradleConstants;
 
 /**
  * Action to invoke the gradle run task dialog depending on the module context.
  * This closely mimics the functionality of the {@link org.jetbrains.plugins.gradle.action.GradleExecuteTaskAction}
+ * but uses the deprecated pop-up dialog instead of the run-anywhere functionality.
  *
  * @see org.jetbrains.plugins.gradle.action.GradleExecuteTaskAction
  * @author rdoboni
  * @author Vladislav.Soroka
  */
-public class RunGradleTask extends ExternalSystemAction
+public class RunGradleAction extends ExternalSystemAction
 {
 
   @Override
-  protected boolean isVisible(AnActionEvent e)
+  protected boolean isVisible(@NotNull AnActionEvent e)
   {
     if (!super.isVisible(e)) return false;
 
-    final Module module = DataKeys.MODULE.getData(e.getDataContext());
-    return module != null;
+    return isGradleModule(getModule(e));
   }
 
   @Override
@@ -82,9 +79,9 @@ public class RunGradleTask extends ExternalSystemAction
   public void actionPerformed(@NotNull final AnActionEvent event)
   {
     final Project project = event.getRequiredData(CommonDataKeys.PROJECT);
-    ExecuteGradleTaskHistoryService historyService = ExecuteGradleTaskHistoryService.getInstance(project);
+    RunGradleTaskHistoryService historyService = RunGradleTaskHistoryService.getInstance(project);
 
-    GradleRunTaskDialog dialog = new GradleRunTaskDialog(project, historyService.getHistory());
+    RunGradleTaskDialog dialog = new RunGradleTaskDialog(project, historyService.getHistory());
 
     dialog.setWorkDirectory(obtainWorkingDirectory(event));
 
@@ -111,10 +108,18 @@ public class RunGradleTask extends ExternalSystemAction
 
     historyService.addCommand(fullCommandLine, workDirectory);
 
+    runGradle(project, fullCommandLine, workDirectory, getExecutor());  //TODO: add support for debug executor on shift hold
+
+  }
+
+  private void runGradle(@NotNull Project project,
+                         @NotNull String fullCommandLine,
+                         @NotNull String workDirectory,
+                         @Nullable Executor executor) {
     final ExternalTaskExecutionInfo taskExecutionInfo;
 
     try {
-      taskExecutionInfo = buildTaskInfo(workDirectory, fullCommandLine);
+      taskExecutionInfo = buildTaskInfo(workDirectory, fullCommandLine, executor);
     }
     catch (CommandLineArgumentException ex)
     {
@@ -128,7 +133,6 @@ public class RunGradleTask extends ExternalSystemAction
       return;
     }
 
-    RunManagerEx runManager = RunManagerEx.getInstanceEx(project);
     ExternalSystemUtil.runTask(taskExecutionInfo.getSettings(), taskExecutionInfo.getExecutorId(), project, GradleConstants.SYSTEM_ID);
 
     RunnerAndConfigurationSettings configuration =
@@ -137,31 +141,32 @@ public class RunGradleTask extends ExternalSystemAction
 
     if (configuration == null) return;
 
+    RunManagerEx runManager = RunManagerEx.getInstanceEx(project);
     final RunnerAndConfigurationSettings existingConfiguration = runManager.findConfigurationByName(configuration.getName());
     if(existingConfiguration == null) {
       runManager.setTemporaryConfiguration(configuration);
     } else {
       runManager.setSelectedConfiguration(existingConfiguration);
     }
-
   }
 
   private String obtainWorkingDirectory(@NotNull final AnActionEvent event)
   {
-    final Module currentModule = ExternalSystemActionUtil.getModule(event.getDataContext());
+    final Module currentModule = getModule(event);
 
     String projectPath = ExternalSystemApiUtil.getExternalProjectPath(currentModule);
     return projectPath == null ? "" : projectPath;
   }
 
-  private static ExternalTaskExecutionInfo buildTaskInfo(@NotNull String projectPath, @NotNull String fullCommandLine)
+  private static ExternalTaskExecutionInfo buildTaskInfo(@NotNull String projectPath, @NotNull String fullCommandLine,
+                                                         @Nullable Executor executor)
     throws CommandLineArgumentException
   {
     CommandLineParser gradleCmdParser = new CommandLineParser();
 
     GradleCommandLineOptionsConverter commandLineConverter = new GradleCommandLineOptionsConverter();
     commandLineConverter.configure(gradleCmdParser);
-    ParsedCommandLine parsedCommandLine = gradleCmdParser.parse(ParametersListUtil.parse(fullCommandLine, true));
+    ParsedCommandLine parsedCommandLine = gradleCmdParser.parse(ParametersListUtil.parse(fullCommandLine, true, true));
 
     final Map<String, List<String>> optionsMap =
       commandLineConverter.convert(parsedCommandLine, new HashMap<>());
@@ -188,8 +193,24 @@ public class RunGradleTask extends ExternalSystemAction
     settings.setScriptParameters(scriptParameters);
     settings.setVmOptions(vmOptions);
     settings.setExternalSystemIdString(GradleConstants.SYSTEM_ID.toString());
-    return new ExternalTaskExecutionInfo(settings, DefaultRunExecutor.EXECUTOR_ID);
+    return new ExternalTaskExecutionInfo(settings, executor == null ? DefaultRunExecutor.EXECUTOR_ID : executor.getId());
   }
 
+  private boolean isGradleModule(Module module) {
+    if (!ExternalSystemApiUtil.isExternalSystemAwareModule(GradleConstants.SYSTEM_ID, module)) return false;
+
+    return ExternalSystemApiUtil.getExternalProjectId(module) != null;
+  }
+
+  @Nullable
+  private Module getModule(AnActionEvent e) {
+    final Module module = e.getData(LangDataKeys.MODULE);
+    return module != null ? module : e.getData(LangDataKeys.MODULE_CONTEXT);
+  }
+
+  private Executor getExecutor() {
+    return DefaultRunExecutor.getRunExecutorInstance();
+    //ExecutorRegistry.getInstance().getExecutorById(ToolWindowId.DEBUG)
+  }
 
 }
