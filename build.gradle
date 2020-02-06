@@ -16,6 +16,6 @@ patchPluginXml {
     Updated the plugin to work with the new IDEA plugin structure / build process.
     Updated the plugin code to remove usage of deprecated APIs."""
 
-    sinceBuild '173.0'
+    sinceBuild '193.0'
 
 }
