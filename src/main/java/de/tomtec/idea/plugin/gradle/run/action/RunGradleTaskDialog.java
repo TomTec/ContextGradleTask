@@ -17,9 +17,9 @@ import com.intellij.ui.EditorComboBoxRenderer;
 import com.intellij.ui.EditorTextField;
 import com.intellij.ui.StringComboboxEditor;
 import com.intellij.util.ArrayUtilRt;
+import de.tomtec.idea.plugin.gradle.run.service.GradleArgumentsCompletionProvider;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
-import org.jetbrains.plugins.gradle.service.execution.GradleArgumentsCompletionProvider;
 import org.jetbrains.plugins.gradle.util.GradleConstants;
 
 import javax.swing.*;

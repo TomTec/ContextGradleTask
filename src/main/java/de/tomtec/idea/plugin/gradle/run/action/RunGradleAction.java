@@ -44,8 +44,6 @@ import org.gradle.cli.ParsedCommandLine;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.jetbrains.plugins.gradle.service.execution.cmd.GradleCommandLineOptionsConverter;
-import org.jetbrains.plugins.gradle.service.task.ExecuteGradleTaskHistoryService;
-import org.jetbrains.plugins.gradle.service.task.GradleRunTaskDialog;
 import org.jetbrains.plugins.gradle.util.GradleConstants;
 
 /**
@@ -110,7 +108,7 @@ public class RunGradleAction extends ExternalSystemAction
 
     historyService.addCommand(fullCommandLine, workDirectory);
 
-    runGradle(project, fullCommandLine, workDirectory, getExecutor());
+    runGradle(project, fullCommandLine, workDirectory, getExecutor());  //TODO: add support for debug executor on shift hold
 
   }
 
@@ -121,7 +119,7 @@ public class RunGradleAction extends ExternalSystemAction
     final ExternalTaskExecutionInfo taskExecutionInfo;
 
     try {
-      taskExecutionInfo = buildTaskInfo(workDirectory, fullCommandLine, executor); //TODO: add support for debug executor
+      taskExecutionInfo = buildTaskInfo(workDirectory, fullCommandLine, executor);
     }
     catch (CommandLineArgumentException ex)
     {
