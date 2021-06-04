@@ -1,23 +1,23 @@
 plugins {
-    id("org.jetbrains.intellij").version("0.4.21")
+    id("java")
+    id("org.jetbrains.intellij").version("1.0")
 }
 
 group = "de.tomtec.idea.plugin"
-version = "1.2"
+version = "1.3"
 
 repositories {
     mavenCentral()
 }
 
 // See https://github.com/JetBrains/gradle-intellij-plugin/
-intellij(Action {
-    version = "LATEST-EAP-SNAPSHOT"
-    setPlugins("gradle")
-    updateSinceUntilBuild = false //set to false here, as also updates the until build to a specific version
-})
+intellij {
+    version.set("LATEST-EAP-SNAPSHOT")
+    plugins.add("gradle")
+    updateSinceUntilBuild.set(false) //set to false here, as also updates the until build to a specific version
+}
 
 tasks.patchPluginXml.configure {
-    setChangeNotes("""Set since version to 2020.2 to be able to use new gradle APIs.""".trimIndent())
-
-    setSinceBuild("202.0")
+    changeNotes.set("""Set since version to 2021.2 due to usage of new APIs instead of deprecated ones.""".trimIndent())
+    sinceBuild.set("212.0")
 }
