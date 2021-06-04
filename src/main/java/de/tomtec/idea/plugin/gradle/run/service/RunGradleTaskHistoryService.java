@@ -27,7 +27,7 @@ public class RunGradleTaskHistoryService implements PersistentStateComponent<Str
     private String myCanceledCommand;
 
     public static RunGradleTaskHistoryService getInstance(@NotNull Project project) {
-        return ServiceManager.getService(project, RunGradleTaskHistoryService.class);
+        return project.getService(RunGradleTaskHistoryService.class);
     }
 
     @Nullable
